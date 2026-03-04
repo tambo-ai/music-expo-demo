@@ -14,6 +14,7 @@ import { PatternEngine } from "../strudel/engine";
 import { NativeAudioOutput } from "../strudel/audio-output";
 import { Scheduler } from "../strudel/scheduler";
 import { patternToGrid } from "../strudel/pattern-to-grid";
+import { wireToolCallbacks } from "../tambo/tools";
 import type { GridData } from "../types";
 
 interface StrudelState {
@@ -138,6 +139,11 @@ export function StrudelProvider({ children }: { children: React.ReactNode }) {
     schedulerRef.current?.setBpm(bpm);
     setState((s) => ({ ...s, bpm }));
   }, []);
+
+  // Wire tool callbacks so Tambo's update_pattern tool can invoke evaluate/play
+  useEffect(() => {
+    wireToolCallbacks(evaluate, play);
+  }, [evaluate, play]);
 
   const value: StrudelContextValue = {
     state,

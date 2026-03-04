@@ -5,26 +5,32 @@ import BottomSheet, {
   BottomSheetFooter,
 } from "@gorhom/bottom-sheet";
 import type { BottomSheetFooterProps } from "@gorhom/bottom-sheet";
-import { useTamboThread } from "@tambo-ai/react";
+import { useTambo } from "@tambo-ai/react";
+import type { TamboThreadMessage } from "@tambo-ai/react";
 import { ChatMessage } from "./chat-message";
 import { InputBar } from "./input-bar";
+
+function getTextContent(message: TamboThreadMessage): string {
+  if (!Array.isArray(message.content)) return "";
+  return message.content
+    .filter((block): block is { type: "text"; text: string } => block.type === "text")
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
+}
 
 export function ChatDrawer() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => [80, "60%"], []);
 
-  const { thread } = useTamboThread();
-  const messages = thread?.messages ?? [];
+  const { messages } = useTambo();
 
-  // Show messages newest-first (inverted list)
+  // Show messages newest-first (inverted list), only user/assistant with text
   const displayMessages = useMemo(
     () =>
       messages
         .filter((m) => m.role === "user" || m.role === "assistant")
-        .filter((m) => {
-          const content = typeof m.content === "string" ? m.content : "";
-          return content.trim().length > 0;
-        })
+        .filter((m) => getTextContent(m).length > 0)
         .reverse(),
     [messages],
   );
@@ -55,7 +61,7 @@ export function ChatDrawer() {
         renderItem={({ item }) => (
           <ChatMessage
             role={item.role as "user" | "assistant"}
-            content={typeof item.content === "string" ? item.content : ""}
+            content={getTextContent(item)}
           />
         )}
         inverted
