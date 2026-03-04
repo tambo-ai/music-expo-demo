@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Music Companion",
+    "slug": "music-expo-demo",
+    "version": "1.0.0",
+    "scheme": "music-expo-demo",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#1a1a2e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tambo.musicdemo"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.tambo.musicdemo"
+    },
+    "plugins": [
+      "expo-router",
+      "react-native-audio-api"
+    ]
+  }
+}
