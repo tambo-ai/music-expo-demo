@@ -22,6 +22,7 @@ export class Scheduler {
   private _isPlaying: boolean = false;
   private stepCallback: StepCallback | null = null;
   private steps: number = 16;
+  private lastScheduledCycle: number = 0; // Dedup: don't re-trigger events
 
   get isPlaying(): boolean {
     return this._isPlaying;
@@ -53,6 +54,7 @@ export class Scheduler {
     this._isPlaying = true;
     this.cycleTime = 0;
     this.startTime = this.ctx.currentTime;
+    this.lastScheduledCycle = 0;
 
     this.timerId = setInterval(() => this.tick(), TICK_MS);
   }
@@ -77,9 +79,19 @@ export class Scheduler {
 
     const lookAheadEnd = (elapsed + LOOKAHEAD_S) / cycleDuration;
 
-    // Query pattern for events in the look-ahead window
+    // Only schedule events from where we left off to avoid duplicates
+    const scheduleFrom = Math.max(currentCycle, this.lastScheduledCycle);
+    if (scheduleFrom >= lookAheadEnd) {
+      // Nothing new to schedule, just update cursor
+      const cyclePos = currentCycle % 1;
+      const currentStep = Math.floor(cyclePos * this.steps);
+      if (this.stepCallback) this.stepCallback(currentStep, this.steps);
+      return;
+    }
+
+    // Query pattern for events in the new window only
     try {
-      const haps = this.pattern.queryArc(currentCycle, lookAheadEnd);
+      const haps = this.pattern.queryArc(scheduleFrom, lookAheadEnd);
 
       for (const hap of haps) {
         if (!hap.hasOnset()) continue;
@@ -101,6 +113,7 @@ export class Scheduler {
           eventTime,
         );
       }
+      this.lastScheduledCycle = lookAheadEnd;
     } catch {
       // Pattern query error — skip this tick
     }

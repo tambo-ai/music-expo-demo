@@ -13,7 +13,7 @@ if (typeof globalThis.crypto === "undefined") {
   globalThis.crypto = {};
 }
 if (!globalThis.crypto.randomUUID) {
-  globalThis.crypto.randomUUID = randomUUID;
+  globalThis.crypto.randomUUID = randomUUID as typeof globalThis.crypto.randomUUID;
 }
 if (!globalThis.crypto.getRandomValues) {
   // @ts-expect-error expo-crypto compatible shim
@@ -39,7 +39,7 @@ if (typeof globalThis.Event === "undefined") {
 }
 
 if (typeof globalThis.EventTarget === "undefined") {
-  // @ts-expect-error minimal polyfill
+  // @ts-ignore minimal polyfill
   globalThis.EventTarget = class EventTarget {
     private _listeners: Record<string, Array<(...args: unknown[]) => void>> = {};
 
