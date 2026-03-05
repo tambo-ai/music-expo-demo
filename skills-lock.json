@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "cli": {
+      "source": "tambo-ai/tambo",
+      "sourceType": "github",
+      "computedHash": "bc12bbc8571dbd71a502ef8f25261ad179299d4742355caee3d9cef95c898615"
+    },
+    "generative-ui": {
+      "source": "tambo-ai/tambo",
+      "sourceType": "github",
+      "computedHash": "fc3d2e5b5cf52a2334b70cd0fefc011adc5e322e8600ea1e1286590a3dfda4b9"
+    }
+  }
+}
