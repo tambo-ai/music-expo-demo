@@ -18,8 +18,14 @@ export function patternToGrid(
   for (const hap of haps) {
     if (!hap.hasOnset()) continue;
 
-    const value = hap.value as Record<string, unknown>;
-    const sound = (value.s as string) ?? "sine";
+    // mini() returns string values like "bd", not objects like {s: "bd"}
+    const raw = hap.value;
+    const sound =
+      typeof raw === "string"
+        ? raw
+        : (raw as Record<string, unknown>)?.s
+          ? String((raw as Record<string, unknown>).s)
+          : "sine";
 
     if (!instrumentMap.has(sound)) {
       instrumentMap.set(sound, new Array(steps).fill(false));

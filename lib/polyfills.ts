@@ -28,6 +28,19 @@ if (!Array.prototype.toSorted) {
   };
 }
 
+// Minimal document stub — @strudel/core accesses document.addEventListener at
+// module load time (guarded by `typeof window` but not `typeof document`).
+if (typeof globalThis.document === "undefined") {
+  // @ts-expect-error minimal stub to prevent crash on import
+  globalThis.document = {
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent() { return true; },
+    getElementById() { return null; },
+    body: { clientHeight: 1, clientWidth: 1 },
+  };
+}
+
 if (typeof globalThis.Event === "undefined") {
   // @ts-expect-error minimal polyfill
   globalThis.Event = class Event {

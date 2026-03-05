@@ -6,15 +6,19 @@ const config = getDefaultConfig(__dirname);
 // Add .mjs so Metro can resolve ES module packages (e.g. @strudel/*)
 config.resolver.sourceExts.push("mjs");
 
-// Shim web-only packages that are hard deps of @strudel/core but unused in RN
+// Stub web-only dependencies that get pulled in transitively
+const upstreamResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (
-    moduleName.startsWith("@kabelsalat/") ||
-    moduleName === "react-dom"
+    moduleName === "react-dom" ||
+    moduleName.startsWith("react-dom/") ||
+    moduleName === "react-media-recorder" ||
+    moduleName.startsWith("@kabelsalat/")
   ) {
-    return {
-      type: "empty",
-    };
+    return { type: "empty" };
+  }
+  if (upstreamResolveRequest) {
+    return upstreamResolveRequest(context, moduleName, platform);
   }
   return context.resolveRequest(context, moduleName, platform);
 };

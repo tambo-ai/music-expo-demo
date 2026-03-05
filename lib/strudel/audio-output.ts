@@ -16,7 +16,10 @@ interface Voice {
 
 /**
  * NativeAudioOutput handles sound synthesis using react-native-audio-api.
- * It routes events to either drum synthesis or oscillator synthesis.
+ * Routes events to either drum synthesis or oscillator synthesis.
+ *
+ * Note: react-native-audio-api's createBufferSource() is async,
+ * so noise-based sounds (snare, hihat, clap) use async methods.
  */
 export class NativeAudioOutput {
   private ctx: AudioContext;
@@ -26,11 +29,6 @@ export class NativeAudioOutput {
     this.ctx = ctx;
   }
 
-  /**
-   * Trigger a sound event at the given audio time.
-   * @param value - Hap value with at least { s: string } for sound name
-   * @param time - AudioContext time to schedule the sound
-   */
   trigger(value: { s?: string; note?: number; gain?: number }, time: number) {
     this.cleanupVoices(time);
     if (this.voices.length >= MAX_VOICES) return;
@@ -43,14 +41,11 @@ export class NativeAudioOutput {
     } else if (sound in OSC_TYPES) {
       this.triggerOsc(sound, time, gain, value.note);
     } else {
-      // Default: treat as oscillator with sine
       this.triggerOsc("sine", time, gain, value.note);
     }
   }
 
   private triggerDrum(sound: string, time: number, gain: number) {
-    const ctx = this.ctx;
-
     switch (sound) {
       case "bd":
         this.synthKick(time, gain);
@@ -59,7 +54,7 @@ export class NativeAudioOutput {
         this.synthSnare(time, gain);
         break;
       case "hh":
-        this.synthHihat(time, gain, 0.05);
+        this.synthHihat(time, gain, 0.06);
         break;
       case "oh":
         this.synthHihat(time, gain, 0.3);
@@ -96,21 +91,35 @@ export class NativeAudioOutput {
 
     osc.connect(env);
     env.connect(ctx.destination);
-
     osc.start(time);
     osc.stop(time + duration);
 
     this.voices.push({ endTime: time + duration });
   }
 
+  // --- Kick: sine sweep 160→50Hz with punch ---
   private synthKick(time: number, gain: number) {
     const ctx = this.ctx;
-    const duration = 0.4;
+    const duration = 0.5;
 
+    // Click transient
+    const click = ctx.createOscillator();
+    click.type = "sine";
+    click.frequency.setValueAtTime(1000, time);
+    click.frequency.exponentialRampToValueAtTime(200, time + 0.01);
+    const clickEnv = ctx.createGain();
+    clickEnv.gain.setValueAtTime(gain * 0.4, time);
+    clickEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
+    click.connect(clickEnv);
+    clickEnv.connect(ctx.destination);
+    click.start(time);
+    click.stop(time + 0.02);
+
+    // Body
     const osc = ctx.createOscillator();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(150, time);
-    osc.frequency.exponentialRampToValueAtTime(40, time + 0.1);
+    osc.frequency.setValueAtTime(160, time);
+    osc.frequency.exponentialRampToValueAtTime(50, time + 0.12);
 
     const env = ctx.createGain();
     env.gain.setValueAtTime(gain, time);
@@ -124,35 +133,36 @@ export class NativeAudioOutput {
     this.voices.push({ endTime: time + duration });
   }
 
-  private synthSnare(time: number, gain: number) {
+  // --- Snare: tone body + noise rattle (async buffer source) ---
+  private async synthSnare(time: number, gain: number) {
     const ctx = this.ctx;
     const duration = 0.2;
 
-    // Tone component
+    // Tone body
     const osc = ctx.createOscillator();
     osc.type = "triangle";
-    osc.frequency.setValueAtTime(200, time);
-    osc.frequency.exponentialRampToValueAtTime(100, time + 0.05);
+    osc.frequency.setValueAtTime(220, time);
+    osc.frequency.exponentialRampToValueAtTime(120, time + 0.04);
 
     const oscEnv = ctx.createGain();
     oscEnv.gain.setValueAtTime(gain * 0.5, time);
-    oscEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+    oscEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
 
     osc.connect(oscEnv);
     oscEnv.connect(ctx.destination);
     osc.start(time);
-    osc.stop(time + 0.1);
+    osc.stop(time + 0.08);
 
-    // Noise component
-    const noiseSrc = ctx.createBufferSource();
+    // Noise rattle
+    const noiseSrc = await ctx.createBufferSource();
     noiseSrc.buffer = getNoiseBuffer(ctx);
 
     const noiseFilter = ctx.createBiquadFilter();
     noiseFilter.type = "highpass";
-    noiseFilter.frequency.setValueAtTime(2000, time);
+    noiseFilter.frequency.setValueAtTime(3000, time);
 
     const noiseEnv = ctx.createGain();
-    noiseEnv.gain.setValueAtTime(gain * 0.8, time);
+    noiseEnv.gain.setValueAtTime(gain * 0.7, time);
     noiseEnv.gain.exponentialRampToValueAtTime(0.001, time + duration);
 
     noiseSrc.connect(noiseFilter);
@@ -164,18 +174,19 @@ export class NativeAudioOutput {
     this.voices.push({ endTime: time + duration });
   }
 
-  private synthHihat(time: number, gain: number, duration: number) {
+  // --- Hihat: filtered noise (async buffer source) ---
+  private async synthHihat(time: number, gain: number, duration: number) {
     const ctx = this.ctx;
 
-    const noiseSrc = ctx.createBufferSource();
+    const noiseSrc = await ctx.createBufferSource();
     noiseSrc.buffer = getNoiseBuffer(ctx);
 
     const filter = ctx.createBiquadFilter();
     filter.type = "highpass";
-    filter.frequency.setValueAtTime(7000, time);
+    filter.frequency.setValueAtTime(8000, time);
 
     const env = ctx.createGain();
-    env.gain.setValueAtTime(gain * 0.5, time);
+    env.gain.setValueAtTime(gain * 0.4, time);
     env.gain.exponentialRampToValueAtTime(0.001, time + duration);
 
     noiseSrc.connect(filter);
@@ -187,11 +198,12 @@ export class NativeAudioOutput {
     this.voices.push({ endTime: time + duration });
   }
 
-  private synthClap(time: number, gain: number) {
+  // --- Clap: filtered noise bursts (async buffer source) ---
+  private async synthClap(time: number, gain: number) {
     const ctx = this.ctx;
     const duration = 0.15;
 
-    const noiseSrc = ctx.createBufferSource();
+    const noiseSrc = await ctx.createBufferSource();
     noiseSrc.buffer = getNoiseBuffer(ctx);
 
     const filter = ctx.createBiquadFilter();
@@ -201,7 +213,6 @@ export class NativeAudioOutput {
 
     const env = ctx.createGain();
     env.gain.setValueAtTime(0, time);
-    // Quick burst envelope for clap character
     env.gain.linearRampToValueAtTime(gain * 0.8, time + 0.005);
     env.gain.linearRampToValueAtTime(gain * 0.3, time + 0.01);
     env.gain.linearRampToValueAtTime(gain * 0.7, time + 0.02);
@@ -216,16 +227,17 @@ export class NativeAudioOutput {
     this.voices.push({ endTime: time + duration });
   }
 
+  // --- Rimshot: short high-freq click ---
   private synthRim(time: number, gain: number) {
     const ctx = this.ctx;
-    const duration = 0.05;
+    const duration = 0.04;
 
     const osc = ctx.createOscillator();
     osc.type = "square";
-    osc.frequency.setValueAtTime(800, time);
+    osc.frequency.setValueAtTime(900, time);
 
     const env = ctx.createGain();
-    env.gain.setValueAtTime(gain * 0.6, time);
+    env.gain.setValueAtTime(gain * 0.5, time);
     env.gain.exponentialRampToValueAtTime(0.001, time + duration);
 
     osc.connect(env);
@@ -236,14 +248,15 @@ export class NativeAudioOutput {
     this.voices.push({ endTime: time + duration });
   }
 
+  // --- Tom: sine sweep with body ---
   private synthTom(time: number, gain: number) {
     const ctx = this.ctx;
-    const duration = 0.3;
+    const duration = 0.35;
 
     const osc = ctx.createOscillator();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(200, time);
-    osc.frequency.exponentialRampToValueAtTime(80, time + duration);
+    osc.frequency.setValueAtTime(180, time);
+    osc.frequency.exponentialRampToValueAtTime(70, time + duration);
 
     const env = ctx.createGain();
     env.gain.setValueAtTime(gain, time);

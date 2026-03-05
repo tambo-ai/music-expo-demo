@@ -5,9 +5,10 @@ import type { GridRow as GridRowType } from "../lib/types";
 
 interface GridRowProps {
   row: GridRowType;
+  cellSize: number;
 }
 
-function GridRowInner({ row }: GridRowProps) {
+function GridRowInner({ row, cellSize }: GridRowProps) {
   return (
     <View style={styles.row}>
       <View style={styles.label}>
@@ -21,6 +22,7 @@ function GridRowInner({ row }: GridRowProps) {
             key={i}
             active={cell.active}
             instrument={row.instrument}
+            size={cellSize}
           />
         ))}
       </View>
@@ -37,8 +39,8 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   label: {
-    width: 48,
-    paddingRight: 6,
+    width: 44,
+    paddingRight: 4,
   },
   labelText: {
     color: "rgba(255, 255, 255, 0.6)",

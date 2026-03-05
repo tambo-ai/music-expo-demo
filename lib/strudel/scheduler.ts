@@ -103,12 +103,20 @@ export class Scheduler {
         // Skip events in the past
         if (eventTime < now - 0.01) continue;
 
-        const value = hap.value as Record<string, unknown>;
+        // mini() returns string values like "bd", not objects like {s: "bd"}
+        const raw = hap.value;
+        const sound =
+          typeof raw === "string"
+            ? raw
+            : (raw as Record<string, unknown>)?.s
+              ? String((raw as Record<string, unknown>).s)
+              : "sine";
+        const obj = typeof raw === "object" ? (raw as Record<string, unknown>) : {};
         this.output.trigger(
           {
-            s: (value.s as string) ?? "sine",
-            note: value.note as number | undefined,
-            gain: value.gain as number | undefined,
+            s: sound,
+            note: obj.note as number | undefined,
+            gain: obj.gain as number | undefined,
           },
           eventTime,
         );
