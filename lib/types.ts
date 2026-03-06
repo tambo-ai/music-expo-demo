@@ -24,32 +24,32 @@ export interface GridData {
   rows: GridRow[];
 }
 
-/** Instrument color mapping for the grid UI */
+/** Instrument color mapping for the grid UI — from Paper design */
 export const INSTRUMENT_COLORS: Record<string, string> = {
-  bd: "#e53e3e",    // deep red — kick
-  sd: "#ed8936",    // orange — snare
-  hh: "#ecc94b",    // yellow — hihat
-  oh: "#f6e05e",    // light yellow — open hihat
-  cp: "#9f7aea",    // purple — clap
-  rim: "#fc8181",   // light red — rimshot
-  tom: "#f56565",   // red — tom
-  sine: "#4299e1",  // blue — sine
-  triangle: "#48bb78", // green — triangle
-  square: "#ed64a6",   // pink — square
-  sawtooth: "#667eea",  // indigo — sawtooth
+  bd: "#6C63FF",    // purple — kick
+  sd: "#FF6B6B",    // coral red — snare
+  hh: "#F6AD55",    // orange — hihat
+  oh: "#F6C542",    // yellow-orange — open hihat
+  cp: "#9B8AFF",    // light purple — clap
+  rim: "#F08B8B",   // light coral — rimshot
+  tom: "#E85B5B",   // red — tom
+  sine: "#4A9EE8",  // blue — sine
+  triangle: "#48BB78", // green — bass
+  square: "#E86BA6",   // pink — square
+  sawtooth: "#6B7BEA",  // indigo — sawtooth
 };
 
 /** Display labels for instruments */
 export const INSTRUMENT_LABELS: Record<string, string> = {
-  bd: "Kick",
-  sd: "Snare",
-  hh: "HiHat",
-  oh: "Open HH",
-  cp: "Clap",
-  rim: "Rim",
-  tom: "Tom",
-  sine: "Sine",
-  triangle: "Tri",
-  square: "Square",
-  sawtooth: "Saw",
+  bd: "KCK",
+  sd: "SNR",
+  hh: "HI",
+  oh: "OH",
+  cp: "CLP",
+  rim: "RIM",
+  tom: "TOM",
+  sine: "SIN",
+  triangle: "BAS",
+  square: "SQR",
+  sawtooth: "SAW",
 };

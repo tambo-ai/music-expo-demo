@@ -6,10 +6,11 @@ import Animated, {
 } from "react-native-reanimated";
 import { useStrudel } from "../lib/providers/strudel-provider";
 import { GridRow } from "./grid-row";
+import { NeumorphicView } from "./neumorphic-view";
 
-const LABEL_WIDTH = 44;
-const GRID_H_PADDING = 12;
-const CELL_GAP = 2; // 1px margin on each side
+const LABEL_WIDTH = 38; // 30px + 8px gap
+const GRID_PADDING = 14;
+const CELL_GAP = 4;
 
 export function SequencerGrid() {
   const { state, playbackStep } = useStrudel();
@@ -17,14 +18,15 @@ export function SequencerGrid() {
   const { width: screenWidth } = useWindowDimensions();
 
   const steps = gridData?.steps ?? 16;
-  const availableWidth = screenWidth - GRID_H_PADDING * 2 - LABEL_WIDTH;
+  const containerWidth = screenWidth - 40; // 20px padding each side
+  const availableWidth = containerWidth - GRID_PADDING * 2 - LABEL_WIDTH;
   const cellSize = Math.floor(availableWidth / steps) - CELL_GAP;
 
   const cursorX = useDerivedValue(() => {
-    return LABEL_WIDTH + playbackStep.value * (cellSize + CELL_GAP);
+    return GRID_PADDING + LABEL_WIDTH + playbackStep.value * (cellSize + CELL_GAP);
   });
 
-  const rowHeight = cellSize + CELL_GAP + 2; // cell + margin + row marginBottom
+  const rowHeight = 21 + 6; // cell height + gap
   const gridHeight = gridData ? gridData.rows.length * rowHeight : 0;
 
   const cursorStyle = useAnimatedStyle(() => ({
@@ -36,58 +38,81 @@ export function SequencerGrid() {
     return (
       <View style={styles.empty}>
         <Text style={styles.emptyText}>Say something to get started!</Text>
-        <Text style={styles.emptyHint}>
-          Try: "Give me a rock beat"
-        </Text>
+        <Text style={styles.emptyHint}>Try: "Give me a rock beat"</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View>
-        {gridData.rows.map((row) => (
-          <GridRow key={row.instrument} row={row} cellSize={cellSize} />
-        ))}
-        {/* Playback cursor overlay — spans only the grid rows */}
-        <Animated.View
-          style={[styles.cursor, { height: gridHeight }, cursorStyle]}
-        />
+    <View style={styles.wrapper}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Step Sequencer</Text>
+        <Text style={styles.headerMeta}>
+          {steps} STEPS · 4/4
+        </Text>
       </View>
+      <NeumorphicView inset radius={18} distance={4}>
+        <View style={styles.gridInner}>
+          {gridData.rows.map((row) => (
+            <GridRow key={row.instrument} row={row} cellSize={cellSize} />
+          ))}
+          <Animated.View
+            style={[styles.cursor, { height: gridHeight }, cursorStyle]}
+          />
+        </View>
+      </NeumorphicView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: GRID_H_PADDING,
-    paddingVertical: 16,
+  wrapper: {
+    gap: 12,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#3A4150",
+    fontFamily: "Space Grotesk",
+  },
+  headerMeta: {
+    fontSize: 10,
+    color: "#8A95A5",
+    letterSpacing: 0.5,
+    fontFamily: "JetBrains Mono",
+  },
+  gridInner: {
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    gap: 6,
   },
   empty: {
-    flex: 1,
-    justifyContent: "center",
+    paddingVertical: 60,
     alignItems: "center",
     paddingHorizontal: 32,
   },
   emptyText: {
-    color: "rgba(255, 255, 255, 0.5)",
-    fontSize: 18,
+    color: "#8A95A5",
+    fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
   },
   emptyHint: {
-    color: "rgba(255, 255, 255, 0.3)",
-    fontSize: 14,
+    color: "#AAAFB8",
+    fontSize: 13,
     marginTop: 8,
     textAlign: "center",
   },
   cursor: {
     position: "absolute",
-    top: 0,
+    top: 14,
     width: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.6)",
+    backgroundColor: "rgba(108, 99, 255, 0.5)",
     borderRadius: 1,
   },
 });
