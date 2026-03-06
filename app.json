@@ -24,7 +24,11 @@
     "plugins": [
       "expo-router",
       "react-native-audio-api",
-      "./plugins/xcode26-workaround"
+      "./plugins/xcode26-workaround",
+      ["expo-speech-recognition", {
+        "microphonePermission": "Allow Music Companion to use the microphone for voice input.",
+        "speechRecognitionPermission": "Allow Music Companion to transcribe your speech."
+      }]
     ]
   }
 }

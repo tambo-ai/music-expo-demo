@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   Pressable,
@@ -8,9 +8,52 @@ import {
 } from "react-native";
 import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { useTamboThreadInput } from "@tambo-ai/react";
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from "expo-speech-recognition";
 
 export function InputBar() {
   const { value, setValue, submit, isPending } = useTamboThreadInput();
+  const [isListening, setIsListening] = useState(false);
+  const voiceSessionRef = useRef(false);
+
+  useSpeechRecognitionEvent("result", (event) => {
+    const transcript = event.results[0]?.transcript ?? "";
+    setValue(transcript);
+    if (event.isFinal && transcript.trim() && voiceSessionRef.current) {
+      voiceSessionRef.current = false;
+      submit();
+    }
+  });
+
+  useSpeechRecognitionEvent("end", () => {
+    setIsListening(false);
+    voiceSessionRef.current = false;
+  });
+
+  useSpeechRecognitionEvent("error", () => {
+    setIsListening(false);
+  });
+
+  const handleMicPress = useCallback(async () => {
+    if (isListening) {
+      ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+
+    const { granted } =
+      await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!granted) return;
+
+    voiceSessionRef.current = true;
+    ExpoSpeechRecognitionModule.start({
+      lang: "en-US",
+      interimResults: true,
+      continuous: false,
+    });
+    setIsListening(true);
+  }, [isListening]);
 
   async function handleSend() {
     if (!value.trim()) return;
@@ -30,6 +73,17 @@ export function InputBar() {
           maxLength={2000}
           editable={!isPending}
         />
+        <Pressable
+          onPress={handleMicPress}
+          disabled={isPending}
+          style={[
+            styles.micButton,
+            isListening && styles.micButtonActive,
+            isPending && styles.sendButtonDisabled,
+          ]}
+        >
+          <Text style={styles.micIcon}>{isListening ? "⏹" : "🎤"}</Text>
+        </Pressable>
         <Pressable
           onPress={handleSend}
           disabled={isPending || !value.trim()}
@@ -72,6 +126,20 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     fontSize: 15,
     color: "#fff",
+  },
+  micButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  micButtonActive: {
+    backgroundColor: "#dc2626",
+  },
+  micIcon: {
+    fontSize: 18,
   },
   sendButton: {
     width: 36,
