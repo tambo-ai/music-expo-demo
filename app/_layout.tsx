@@ -5,6 +5,10 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { TamboProvider } from "@tambo-ai/react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { randomUUID } from "expo-crypto";
+import { useFonts } from "@expo-google-fonts/geist-mono/useFonts";
+import { GeistMono_400Regular } from "@expo-google-fonts/geist-mono/400Regular";
+import { GeistMono_500Medium } from "@expo-google-fonts/geist-mono/500Medium";
+import { GeistMono_700Bold } from "@expo-google-fonts/geist-mono/700Bold";
 import { StrudelProvider } from "../lib/providers/strudel-provider";
 import { tools } from "../lib/tambo/tools";
 import { components } from "../lib/tambo/components";
@@ -14,6 +18,11 @@ const USER_KEY_STORAGE = "music-companion-user-key";
 
 export default function RootLayout() {
   const [userKey, setUserKey] = useState<string | null>(null);
+  const [fontsLoaded] = useFonts({
+    GeistMono_400Regular,
+    GeistMono_500Medium,
+    GeistMono_700Bold,
+  });
 
   useEffect(() => {
     async function getOrCreateUserKey() {
@@ -27,7 +36,7 @@ export default function RootLayout() {
     void getOrCreateUserKey();
   }, []);
 
-  if (!userKey) return null;
+  if (!userKey || !fontsLoaded) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

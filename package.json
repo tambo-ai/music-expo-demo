@@ -9,6 +9,7 @@
     "prebuild": "expo prebuild"
   },
   "dependencies": {
+    "@expo-google-fonts/geist-mono": "^0.4.1",
     "@gorhom/bottom-sheet": "^5.2.8",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@strudel/core": "^1.2.5",
@@ -22,8 +23,8 @@
     "expo-speech-recognition": "^3.1.1",
     "expo-status-bar": "~55.0.4",
     "quansync": "^1.0.0",
-    "react": "19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "react-native": "0.83.2",
     "react-native-audio-api": "0.11.4",
     "react-native-gesture-handler": "~2.30.0",

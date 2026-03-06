@@ -78,13 +78,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#3A4150",
-    fontFamily: "Space Grotesk",
+    fontFamily: "GeistMono_500Medium",
   },
   headerMeta: {
     fontSize: 10,
     color: "#8A95A5",
     letterSpacing: 0.5,
-    fontFamily: "JetBrains Mono",
+    fontFamily: "GeistMono_400Regular",
   },
   gridInner: {
     paddingVertical: 14,

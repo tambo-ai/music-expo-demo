@@ -118,10 +118,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#3A4150",
     letterSpacing: -0.34,
+    fontFamily: "GeistMono_700Bold",
   },
   appSubtitle: {
     fontSize: 11,
     color: "#8A95A5",
+    fontFamily: "GeistMono_400Regular",
   },
   headerRight: {
     flexDirection: "row",
@@ -144,7 +146,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 9,
     color: "#4A5568",
-    fontFamily: "JetBrains Mono",
+    fontFamily: "GeistMono_400Regular",
   },
   chatButtonOuter: {
     backgroundColor: "#6C63FF",

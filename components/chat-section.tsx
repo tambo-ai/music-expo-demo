@@ -219,7 +219,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: "#3A4150",
-    fontFamily: "Space Grotesk",
   },
   messagesList: {
     flex: 1,

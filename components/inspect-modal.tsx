@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
     color: "#3A4150",
     fontSize: 16,
     fontWeight: "700",
+    fontFamily: "GeistMono_700Bold",
   },
   closeButton: {
     paddingHorizontal: 12,
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
   code: {
     color: "#6C63FF",
     fontSize: 13,
-    fontFamily: "JetBrains Mono",
+    fontFamily: "GeistMono_400Regular",
     lineHeight: 20,
   },
 });

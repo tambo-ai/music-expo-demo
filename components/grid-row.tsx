@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     width: 30,
     letterSpacing: 0.45,
-    fontFamily: "JetBrains Mono",
+    fontFamily: "GeistMono_500Medium",
   },
   cells: {
     flexDirection: "row",

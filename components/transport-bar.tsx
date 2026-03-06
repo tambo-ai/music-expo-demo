@@ -134,13 +134,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#3A4150",
     letterSpacing: -0.48,
-    fontFamily: "JetBrains Mono",
+    fontFamily: "GeistMono_700Bold",
   },
   bpmLabel: {
     fontSize: 9,
     color: "#8A95A5",
     letterSpacing: 0.9,
-    fontFamily: "JetBrains Mono",
+    fontFamily: "GeistMono_400Regular",
   },
   rightGroup: {
     flexDirection: "row",
