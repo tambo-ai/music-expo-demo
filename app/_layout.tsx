@@ -12,6 +12,7 @@ import { GeistMono_700Bold } from "@expo-google-fonts/geist-mono/700Bold";
 import { StrudelProvider } from "../lib/providers/strudel-provider";
 import { tools } from "../lib/tambo/tools";
 import { components } from "../lib/tambo/components";
+import { initialMessages } from "../lib/tambo/system-prompt";
 
 const TAMBO_API_KEY = process.env.EXPO_PUBLIC_TAMBO_API_KEY ?? "";
 const USER_KEY_STORAGE = "music-companion-user-key";
@@ -45,6 +46,7 @@ export default function RootLayout() {
         userKey={userKey}
         tools={tools}
         components={components}
+        initialMessages={initialMessages}
       >
         <StrudelProvider>
           <Slot />
