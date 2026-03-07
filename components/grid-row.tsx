@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { GridCell } from "./grid-cell";
+import { INSTRUMENT_COLORS } from "../lib/types";
 import type { GridRow as GridRowType } from "../lib/types";
 
 interface GridRowProps {
@@ -9,13 +10,13 @@ interface GridRowProps {
 }
 
 function GridRowInner({ row, cellSize }: GridRowProps) {
+  const labelColor = INSTRUMENT_COLORS[row.instrument] ?? "#8A95A5";
+
   return (
     <View style={styles.row}>
-      <View style={styles.label}>
-        <Text style={styles.labelText} numberOfLines={1}>
-          {row.label}
-        </Text>
-      </View>
+      <Text style={[styles.labelText, { color: labelColor }]} numberOfLines={1}>
+        {row.label}
+      </Text>
       <View style={styles.cells}>
         {row.cells.map((cell, i) => (
           <GridCell
@@ -36,19 +37,18 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 2,
-  },
-  label: {
-    width: 44,
-    paddingRight: 4,
+    gap: 8,
   },
   labelText: {
-    color: "rgba(255, 255, 255, 0.6)",
-    fontSize: 10,
-    fontWeight: "600",
-    textAlign: "right",
+    fontSize: 9,
+    fontWeight: "500",
+    width: 30,
+    letterSpacing: 0.45,
+    fontFamily: "GeistMono_500Medium",
   },
   cells: {
     flexDirection: "row",
+    flex: 1,
+    gap: 4,
   },
 });

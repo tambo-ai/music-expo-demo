@@ -2,23 +2,33 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { INSTRUMENT_COLORS } from "../lib/types";
 
+const CELL_HEIGHT = 21;
+
 interface GridCellProps {
   active: boolean;
   instrument: string;
   size: number;
 }
 
-function GridCellInner({ active, instrument, size }: GridCellProps) {
-  const color = INSTRUMENT_COLORS[instrument] ?? "#4299e1";
+function GridCellInner({ active, instrument }: GridCellProps) {
+  const color = INSTRUMENT_COLORS[instrument] ?? "#6C63FF";
 
+  if (active) {
+    return (
+      <View
+        style={[
+          styles.cell,
+          { backgroundColor: color },
+        ]}
+      />
+    );
+  }
+
+  // Inactive: dual neumorphic shadow (dark outer wraps light inner)
   return (
-    <View
-      style={[
-        styles.cell,
-        { width: size, height: size },
-        active ? { backgroundColor: color } : styles.inactive,
-      ]}
-    />
+    <View style={[styles.cell, styles.inactiveDark]}>
+      <View style={styles.inactiveLight} />
+    </View>
   );
 }
 
@@ -32,10 +42,24 @@ export const GridCell = React.memo(GridCellInner, (prev, next) => {
 
 const styles = StyleSheet.create({
   cell: {
-    borderRadius: 3,
-    margin: 1,
+    flex: 1,
+    height: CELL_HEIGHT,
+    borderRadius: 6,
   },
-  inactive: {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  inactiveDark: {
+    backgroundColor: "#E0E5EC",
+    shadowColor: "#BABECC",
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 6,
+  },
+  inactiveLight: {
+    flex: 1,
+    borderRadius: 6,
+    backgroundColor: "#E0E5EC",
+    shadowColor: "#FFFFFF",
+    shadowOffset: { width: -3, height: -3 },
+    shadowOpacity: 1,
+    shadowRadius: 6,
   },
 });
