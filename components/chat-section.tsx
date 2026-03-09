@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from "expo-speech-recognition";
 import type { TamboThreadMessage } from "@tambo-ai/react";
 import { NeumorphicView } from "./neumorphic-view";
 
@@ -64,6 +68,45 @@ export function ChatSection() {
   const listRef = useRef<FlatList>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [inputHeight, setInputHeight] = useState(36);
+  const [isListening, setIsListening] = useState(false);
+  const voiceSessionRef = useRef(false);
+
+  useSpeechRecognitionEvent("result", (event) => {
+    const transcript = event.results[0]?.transcript ?? "";
+    setValue(transcript);
+    if (event.isFinal && transcript.trim() && voiceSessionRef.current) {
+      voiceSessionRef.current = false;
+      submit();
+    }
+  });
+
+  useSpeechRecognitionEvent("end", () => {
+    setIsListening(false);
+    voiceSessionRef.current = false;
+  });
+
+  useSpeechRecognitionEvent("error", () => {
+    setIsListening(false);
+  });
+
+  const handleMicPress = useCallback(async () => {
+    if (isListening) {
+      ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+
+    const { granted } =
+      await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!granted) return;
+
+    voiceSessionRef.current = true;
+    ExpoSpeechRecognitionModule.start({
+      lang: "en-US",
+      interimResults: true,
+      continuous: false,
+    });
+    setIsListening(true);
+  }, [isListening]);
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -164,8 +207,12 @@ export function ChatSection() {
               }}
             />
           </NeumorphicView>
-          <Pressable style={styles.voiceButton} onPress={() => {}}>
-            <Ionicons name="mic" size={18} color="#FFFFFF" />
+          <Pressable
+            style={[styles.voiceButton, isListening && styles.voiceButtonActive]}
+            onPress={handleMicPress}
+            disabled={isPending}
+          >
+            <Ionicons name={isListening ? "stop" : "mic"} size={18} color="#FFFFFF" />
           </Pressable>
           <Pressable
             onPress={handleSend}
@@ -303,6 +350,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#6C63FF",
     alignItems: "center",
     justifyContent: "center",
+  },
+  voiceButtonActive: {
+    backgroundColor: "#dc2626",
   },
   sendButton: {
     width: 36,
