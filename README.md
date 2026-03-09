@@ -2,6 +2,10 @@
 
 A mobile "metronome on steroids" — type natural language like "Give me a rock beat" and get instant audio with a visual step sequencer. Built with Expo, Tambo AI, and Strudel.
 
+<p align="center">
+  <img src="assets/simulator-screenshot.png" alt="Music Companion screenshot" width="300" />
+</p>
+
 ## Stack
 
 - **Expo SDK 55** / React Native 0.83
