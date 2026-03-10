@@ -140,10 +140,12 @@ export function StrudelProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, bpm }));
   }, []);
 
-  // Wire tool callbacks so Tambo's update_pattern tool can invoke evaluate/play
+  const getBpm = useCallback(() => state.bpm, [state.bpm]);
+
+  // Wire tool callbacks so Tambo tools can invoke evaluate/play/bpm
   useEffect(() => {
-    wireToolCallbacks(evaluate, play);
-  }, [evaluate, play]);
+    wireToolCallbacks(evaluate, play, getBpm, setBpm);
+  }, [evaluate, play, getBpm, setBpm]);
 
   const value: StrudelContextValue = {
     state,
