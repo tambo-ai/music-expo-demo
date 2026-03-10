@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { View, Text, Pressable, Keyboard, StyleSheet, TouchableWithoutFeedback } from "react-native";
+import { View, Text, Pressable, Keyboard, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTambo } from "@tambo-ai/react";
 import { TransportBar } from "../components/transport-bar";
 import { SequencerGrid } from "../components/sequencer-grid";
 import { ChatSection } from "../components/chat-section";
@@ -10,7 +11,7 @@ import { InspectModal } from "../components/inspect-modal";
 import { NeumorphicView } from "../components/neumorphic-view";
 import { useStrudel } from "../lib/providers/strudel-provider";
 
-function HeaderBar({ onInspect }: { onInspect: () => void }) {
+function HeaderBar({ onInspect, onReset }: { onInspect: () => void; onReset: () => void }) {
   return (
     <NeumorphicView style={styles.header} radius={20} distance={6}>
       <View style={styles.headerInner}>
@@ -32,6 +33,11 @@ function HeaderBar({ onInspect }: { onInspect: () => void }) {
               <Text style={styles.statusText}>AI On</Text>
             </View>
           </NeumorphicView>
+          <NeumorphicView radius={12} distance={4} style={styles.resetButtonOuter}>
+            <Pressable style={styles.resetButton} onPress={onReset}>
+              <Ionicons name="refresh" size={16} color="#FFFFFF" />
+            </Pressable>
+          </NeumorphicView>
           <NeumorphicView radius={12} distance={4} style={styles.chatButtonOuter}>
             <Pressable style={styles.chatButton} onPress={onInspect}>
               <Ionicons name="code-slash" size={16} color="#FFFFFF" />
@@ -45,14 +51,20 @@ function HeaderBar({ onInspect }: { onInspect: () => void }) {
 
 export default function HomeScreen() {
   const [showInspect, setShowInspect] = useState(false);
-  const { state } = useStrudel();
+  const { state, actions } = useStrudel();
+  const { startNewThread } = useTambo();
+
+  const handleReset = () => {
+    actions.reset();
+    startNewThread();
+  };
 
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <Pressable style={styles.topContent} onPress={Keyboard.dismiss}>
-          <HeaderBar onInspect={() => setShowInspect(true)} />
+          <HeaderBar onInspect={() => setShowInspect(true)} onReset={handleReset} />
           <SequencerGrid />
           <TransportBar />
         </Pressable>
@@ -147,6 +159,17 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: "#4A5568",
     fontFamily: "GeistMono_400Regular",
+  },
+  resetButtonOuter: {
+    backgroundColor: "#6C63FF",
+  },
+  resetButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#6C63FF",
+    borderRadius: 12,
   },
   chatButtonOuter: {
     backgroundColor: "#6C63FF",
