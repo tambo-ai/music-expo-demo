@@ -1,17 +1,21 @@
 import { z } from "zod";
 import { defineTool } from "@tambo-ai/react";
 
-// These will be wired to StrudelProvider actions in Step 8.
-// For now, store callbacks that get set by the provider.
 let evaluateCallback: ((code: string) => { success: boolean; error?: string }) | null = null;
 let playCallback: (() => void) | null = null;
+let getBpmCallback: (() => number) | null = null;
+let setBpmCallback: ((bpm: number) => void) | null = null;
 
 export function wireToolCallbacks(
   evaluate: (code: string) => { success: boolean; error?: string },
   play: () => void,
+  getBpm: () => number,
+  setBpm: (bpm: number) => void,
 ) {
   evaluateCallback = evaluate;
   playCallback = play;
+  getBpmCallback = getBpm;
+  setBpmCallback = setBpm;
 }
 
 export const updatePattern = defineTool({
@@ -42,4 +46,45 @@ export const updatePattern = defineTool({
   },
 });
 
-export const tools = [updatePattern];
+export const getBpm = defineTool({
+  name: "get_bpm",
+  description:
+    "Get the current tempo/BPM (beats per minute) of the playing pattern. Use this to check the current speed, rhythm pace, or tempo before adjusting it.",
+  inputSchema: z.object({}),
+  outputSchema: z.object({
+    bpm: z.number(),
+  }),
+  tool: async () => {
+    if (!getBpmCallback) {
+      return { bpm: 120 };
+    }
+    return { bpm: getBpmCallback() };
+  },
+});
+
+export const setBpm = defineTool({
+  name: "set_bpm",
+  description:
+    "Set the tempo/BPM (beats per minute) to control how fast or slow the pattern plays. Use this to change the speed, rhythm pace, or tempo. Valid range is 40-240. Common tempos: 70-90 hip-hop, 120-130 house, 140-170 drum & bass.",
+  inputSchema: z.object({
+    bpm: z
+      .number()
+      .min(40)
+      .max(240)
+      .describe("Beats per minute, between 40 and 240"),
+  }),
+  outputSchema: z.object({
+    success: z.boolean(),
+    bpm: z.number(),
+  }),
+  tool: async ({ bpm }) => {
+    if (!setBpmCallback) {
+      return { success: false, bpm: 120 };
+    }
+    const clamped = Math.max(40, Math.min(240, Math.round(bpm)));
+    setBpmCallback(clamped);
+    return { success: true, bpm: clamped };
+  },
+});
+
+export const tools = [updatePattern, getBpm, setBpm];
