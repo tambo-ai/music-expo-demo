@@ -30,6 +30,7 @@ interface StrudelActions {
   play: () => void;
   stop: () => void;
   setBpm: (bpm: number) => void;
+  reset: () => void;
 }
 
 interface StrudelContextValue {
@@ -142,6 +143,18 @@ export function StrudelProvider({ children }: { children: React.ReactNode }) {
 
   const getBpm = useCallback(() => state.bpm, [state.bpm]);
 
+  const reset = useCallback(() => {
+    schedulerRef.current?.stop();
+    playbackStep.value = 0;
+    setState({
+      isPlaying: false,
+      gridData: null,
+      code: "",
+      bpm: 120,
+      error: null,
+    });
+  }, [playbackStep]);
+
   // Wire tool callbacks so Tambo tools can invoke evaluate/play/bpm
   useEffect(() => {
     wireToolCallbacks(evaluate, play, getBpm, setBpm);
@@ -149,7 +162,7 @@ export function StrudelProvider({ children }: { children: React.ReactNode }) {
 
   const value: StrudelContextValue = {
     state,
-    actions: { evaluate, play, stop, setBpm },
+    actions: { evaluate, play, stop, setBpm, reset },
     playbackStep,
   };
 
