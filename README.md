@@ -12,6 +12,7 @@ A mobile "metronome on steroids" — type natural language like "Give me a rock 
 - **Tambo AI** — natural language to tool calls
 - **Strudel** (`@strudel/core` + `@strudel/mini`) — music pattern engine
 - **react-native-audio-api** — native audio synthesis
+- **expo-speech-recognition** — voice input via microphone
 - **Reanimated** — 60fps playback cursor
 
 ## Prerequisites
@@ -26,6 +27,9 @@ A mobile "metronome on steroids" — type natural language like "Give me a rock 
 # Install dependencies
 npm install --legacy-peer-deps
 
+# Download prebuilt native audio libraries
+cd node_modules/react-native-audio-api && bash scripts/download-prebuilt-binaries.sh && cd ../..
+
 # Add your Tambo API key
 cp .env.example .env
 # Edit .env and set EXPO_PUBLIC_TAMBO_API_KEY=your_key_here
@@ -36,7 +40,7 @@ npx expo run:ios
 
 ## Usage
 
-Type a prompt in the chat bar at the bottom:
+Type a prompt in the chat bar at the bottom, or tap the microphone button to use voice input:
 
 - "Give me a rock beat"
 - "Add a hihat pattern"
@@ -52,22 +56,25 @@ app/                    # Expo Router screens
   _layout.tsx           # Root layout (providers)
   index.tsx             # Main screen
 components/             # UI components
+  chat-section.tsx      # Inline chat with voice input
   sequencer-grid.tsx    # Step sequencer with animated cursor
   grid-row.tsx / grid-cell.tsx
   transport-bar.tsx     # Play/Stop + BPM
-  chat-drawer.tsx       # Bottom sheet chat
-  input-bar.tsx         # Text input
+  neumorphic-view.tsx   # Neumorphic shadow wrapper
+  inspect-modal.tsx     # Pattern inspect modal
 lib/
   strudel/
     engine.ts           # Pattern evaluation via mini()
     scheduler.ts        # Two-clocks audio scheduler
     audio-output.ts     # Drum + oscillator synthesis
+    noise-buffers.ts    # Noise generation for synthesis
     pattern-to-grid.ts  # Pattern -> grid visualization
-  providers/
     strudel-provider.tsx # React context for audio state
   tambo/
     tools.ts            # update_pattern tool definition
+    components.ts       # Tambo component registration
     system-prompt.ts    # AI instructions + examples
+  types.ts              # Shared type definitions
   polyfills.ts          # RN runtime polyfills
 plugins/
   xcode26-workaround.js # Auto-patches Podfile for Xcode 26
