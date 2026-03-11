@@ -13,7 +13,7 @@ const GRID_PADDING = 14;
 const CELL_GAP = 4;
 
 export function SequencerGrid() {
-  const { state, playbackStep } = useStrudel();
+  const { state, actions, playbackStep } = useStrudel();
   const { gridData, isPlaying } = state;
   const { width: screenWidth } = useWindowDimensions();
 
@@ -54,7 +54,7 @@ export function SequencerGrid() {
       <NeumorphicView inset radius={18} distance={4}>
         <View style={styles.gridInner}>
           {gridData.rows.map((row) => (
-            <GridRow key={row.instrument} row={row} cellSize={cellSize} />
+            <GridRow key={row.instrument} row={row} cellSize={cellSize} onToggleCell={actions.toggleCell} />
           ))}
           <Animated.View
             style={[styles.cursor, { height: gridHeight }, cursorStyle]}

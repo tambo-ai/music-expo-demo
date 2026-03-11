@@ -14,6 +14,7 @@ import { PatternEngine } from "../strudel/engine";
 import { NativeAudioOutput } from "../strudel/audio-output";
 import { Scheduler } from "../strudel/scheduler";
 import { patternToGrid } from "../strudel/pattern-to-grid";
+import { gridToCode } from "../strudel/grid-to-code";
 import { wireToolCallbacks } from "../tambo/tools";
 import type { GridData } from "../types";
 
@@ -31,6 +32,7 @@ interface StrudelActions {
   stop: () => void;
   setBpm: (bpm: number) => void;
   reset: () => void;
+  toggleCell: (instrument: string, step: number) => void;
 }
 
 interface StrudelContextValue {
@@ -143,6 +145,39 @@ export function StrudelProvider({ children }: { children: React.ReactNode }) {
 
   const getBpm = useCallback(() => state.bpm, [state.bpm]);
 
+  const toggleCell = useCallback(
+    (instrument: string, step: number) => {
+      setState((prev) => {
+        if (!prev.gridData) return prev;
+
+        // Clone and toggle the cell
+        const newRows = prev.gridData.rows.map((row) => {
+          if (row.instrument !== instrument) return row;
+          const newCells = row.cells.map((cell, i) =>
+            i === step ? { ...cell, active: !cell.active } : cell,
+          );
+          return { ...row, cells: newCells };
+        });
+
+        const newGrid: GridData = { ...prev.gridData, rows: newRows };
+        const newCode = gridToCode(newGrid);
+
+        // Re-evaluate to update the audio pattern
+        const engine = engineRef.current;
+        try {
+          const pattern = engine.evaluate(newCode);
+          getAudioContext();
+          schedulerRef.current?.setPattern(pattern);
+          return { ...prev, gridData: newGrid, code: newCode, error: null };
+        } catch {
+          // If the new pattern is invalid (e.g. all rests), just update the grid
+          return { ...prev, gridData: newGrid, code: newCode };
+        }
+      });
+    },
+    [getAudioContext],
+  );
+
   const reset = useCallback(() => {
     schedulerRef.current?.stop();
     playbackStep.value = 0;
@@ -162,7 +197,7 @@ export function StrudelProvider({ children }: { children: React.ReactNode }) {
 
   const value: StrudelContextValue = {
     state,
-    actions: { evaluate, play, stop, setBpm, reset },
+    actions: { evaluate, play, stop, setBpm, reset, toggleCell },
     playbackStep,
   };
 

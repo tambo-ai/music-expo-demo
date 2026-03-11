@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { GridCell } from "./grid-cell";
 import { INSTRUMENT_COLORS } from "../lib/types";
@@ -7,10 +7,16 @@ import type { GridRow as GridRowType } from "../lib/types";
 interface GridRowProps {
   row: GridRowType;
   cellSize: number;
+  onToggleCell?: (instrument: string, step: number) => void;
 }
 
-function GridRowInner({ row, cellSize }: GridRowProps) {
+function GridRowInner({ row, cellSize, onToggleCell }: GridRowProps) {
   const labelColor = INSTRUMENT_COLORS[row.instrument] ?? "#8A95A5";
+
+  const makeHandler = useCallback(
+    (step: number) => () => onToggleCell?.(row.instrument, step),
+    [onToggleCell, row.instrument],
+  );
 
   return (
     <View style={styles.row}>
@@ -24,6 +30,7 @@ function GridRowInner({ row, cellSize }: GridRowProps) {
             active={cell.active}
             instrument={row.instrument}
             size={cellSize}
+            onPress={makeHandler(i)}
           />
         ))}
       </View>
