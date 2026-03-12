@@ -8,22 +8,29 @@ import { useStrudel } from "../lib/providers/strudel-provider";
 import { GridRow } from "./grid-row";
 import { NeumorphicView } from "./neumorphic-view";
 
-const LABEL_WIDTH = 38; // 30px + 8px gap
+const LABEL_WIDTH = 30;
+const LABEL_GAP = 8;
 const GRID_PADDING = 14;
 const CELL_GAP = 4;
 
 export function SequencerGrid() {
-  const { state, playbackStep } = useStrudel();
+  const { state, actions, playbackStep } = useStrudel();
   const { gridData, isPlaying } = state;
   const { width: screenWidth } = useWindowDimensions();
 
   const steps = gridData?.steps ?? 16;
   const containerWidth = screenWidth - 40; // 20px padding each side
-  const availableWidth = containerWidth - GRID_PADDING * 2 - LABEL_WIDTH;
-  const cellSize = Math.floor(availableWidth / steps) - CELL_GAP;
+  // Match the flexbox layout: cells container = total - padding - label - label gap
+  const cellsWidth = containerWidth - GRID_PADDING * 2 - LABEL_WIDTH - LABEL_GAP;
+  // Each cell via flex: 1 gets (cellsWidth - totalGaps) / steps
+  const cellWidth = (cellsWidth - (steps - 1) * CELL_GAP) / steps;
+  const cellStride = cellWidth + CELL_GAP;
 
+  // Cursor should land at the center of each cell
+  const cursorOffset = GRID_PADDING + LABEL_WIDTH + LABEL_GAP;
+  const CURSOR_WIDTH = 2;
   const cursorX = useDerivedValue(() => {
-    return GRID_PADDING + LABEL_WIDTH + playbackStep.value * (cellSize + CELL_GAP);
+    return cursorOffset + playbackStep.value * cellStride + cellWidth / 2 - CURSOR_WIDTH / 2;
   });
 
   const rowHeight = 21 + 6; // cell height + gap
@@ -54,7 +61,7 @@ export function SequencerGrid() {
       <NeumorphicView inset radius={18} distance={4}>
         <View style={styles.gridInner}>
           {gridData.rows.map((row) => (
-            <GridRow key={row.instrument} row={row} cellSize={cellSize} />
+            <GridRow key={row.instrument} row={row} cellSize={cellWidth} onToggleCell={actions.toggleCell} />
           ))}
           <Animated.View
             style={[styles.cursor, { height: gridHeight }, cursorStyle]}

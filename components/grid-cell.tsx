@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { INSTRUMENT_COLORS } from "../lib/types";
 
 const CELL_HEIGHT = 21;
@@ -8,14 +8,16 @@ interface GridCellProps {
   active: boolean;
   instrument: string;
   size: number;
+  onPress?: () => void;
 }
 
-function GridCellInner({ active, instrument }: GridCellProps) {
+function GridCellInner({ active, instrument, onPress }: GridCellProps) {
   const color = INSTRUMENT_COLORS[instrument] ?? "#6C63FF";
 
   if (active) {
     return (
-      <View
+      <Pressable
+        onPress={onPress}
         style={[
           styles.cell,
           { backgroundColor: color },
@@ -26,9 +28,9 @@ function GridCellInner({ active, instrument }: GridCellProps) {
 
   // Inactive: dual neumorphic shadow (dark outer wraps light inner)
   return (
-    <View style={[styles.cell, styles.inactiveDark]}>
+    <Pressable onPress={onPress} style={[styles.cell, styles.inactiveDark]}>
       <View style={styles.inactiveLight} />
-    </View>
+    </Pressable>
   );
 }
 
@@ -36,7 +38,8 @@ export const GridCell = React.memo(GridCellInner, (prev, next) => {
   return (
     prev.active === next.active &&
     prev.instrument === next.instrument &&
-    prev.size === next.size
+    prev.size === next.size &&
+    prev.onPress === next.onPress
   );
 });
 

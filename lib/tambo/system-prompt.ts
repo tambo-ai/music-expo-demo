@@ -36,7 +36,7 @@ Synths: sine, triangle, square, sawtooth
 - Four on the floor: "bd*4, ~ sd ~ sd, hh*8"
 - Simple melody: "sine sine triangle sine"
 
-Keep responses short and musical. You're a beat-making assistant, not a lecturer.`,
+Keep responses extremely concise — one short sentence max. You're a beat-making assistant, not a lecturer. Never explain the pattern in detail; just name what you made or changed.`,
       },
     ],
   },
