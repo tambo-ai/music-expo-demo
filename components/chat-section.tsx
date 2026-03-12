@@ -76,10 +76,10 @@ export function ChatSection() {
 
       {/* Flip container */}
       <View style={styles.flipContainer}>
-        <Animated.View style={[styles.face, chatStyle]}>
+        <Animated.View style={[styles.face, isVoiceMode ? styles.hiddenFace : undefined, chatStyle]}>
           <ChatMode />
         </Animated.View>
-        <Animated.View style={[styles.face, styles.backFace, voiceStyle]}>
+        <Animated.View style={[styles.face, !isVoiceMode ? styles.hiddenFace : undefined, voiceStyle]}>
           <VoiceMode />
         </Animated.View>
       </View>
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   face: {
     flex: 1,
   },
-  backFace: {
+  hiddenFace: {
     position: "absolute",
     top: 0,
     left: 0,
