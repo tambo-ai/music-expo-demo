@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -39,6 +39,7 @@ const FADE_DURATION = 400;
 const USER_FADE_DELAY = 3000;
 
 export function VoiceMode() {
+  const insets = useSafeAreaInsets();
   const { messages } = useTambo();
   const { value, setValue, submit, isPending } = useTamboThreadInput();
   const [isListening, setIsListening] = useState(false);
@@ -126,7 +127,7 @@ export function VoiceMode() {
 
   return (
     <NeumorphicView inset radius={22} distance={4} style={styles.card}>
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         {/* User transcript - above mic */}
         <Animated.View style={[styles.textArea, styles.userArea, userAnimStyle]}>
           <Text style={styles.userText}>

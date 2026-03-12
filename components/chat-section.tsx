@@ -15,8 +15,8 @@ import { VoiceMode } from "./voice-mode";
 const FLIP_DURATION = 500;
 
 export function ChatSection() {
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
-  const flipProgress = useSharedValue(0); // 0 = chat, 1 = voice
+  const [isVoiceMode, setIsVoiceMode] = useState(true);
+  const flipProgress = useSharedValue(1); // 0 = chat, 1 = voice
 
   const toggleMode = useCallback(() => {
     const next = !isVoiceMode;
