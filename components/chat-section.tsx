@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
   interpolate,
   Easing,
+  runOnJS,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { NeumorphicView } from "./neumorphic-view";
@@ -16,16 +17,25 @@ const FLIP_DURATION = 500;
 
 export function ChatSection() {
   const [isVoiceMode, setIsVoiceMode] = useState(true);
+  const [isFlipping, setIsFlipping] = useState(false);
   const flipProgress = useSharedValue(1); // 0 = chat, 1 = voice
+
+  const onFlipDone = useCallback(() => {
+    setIsFlipping(false);
+  }, []);
 
   const toggleMode = useCallback(() => {
     const next = !isVoiceMode;
+    setIsFlipping(true);
     setIsVoiceMode(next);
-    flipProgress.value = withTiming(next ? 1 : 0, {
-      duration: FLIP_DURATION,
-      easing: Easing.inOut(Easing.cubic),
-    });
-  }, [isVoiceMode, flipProgress]);
+    flipProgress.value = withTiming(
+      next ? 1 : 0,
+      { duration: FLIP_DURATION, easing: Easing.inOut(Easing.cubic) },
+      (finished) => {
+        if (finished) runOnJS(onFlipDone)();
+      },
+    );
+  }, [isVoiceMode, flipProgress, onFlipDone]);
 
   // Chat side: visible when progress 0→0.5, hidden at 0.5→1
   const chatStyle = useAnimatedStyle(() => {
@@ -48,6 +58,9 @@ export function ChatSection() {
       backfaceVisibility: "hidden" as const,
     };
   });
+
+  const showChat = !isVoiceMode || isFlipping;
+  const showVoice = isVoiceMode || isFlipping;
 
   return (
     <View style={styles.container}>
@@ -74,14 +87,18 @@ export function ChatSection() {
         </NeumorphicView>
       </View>
 
-      {/* Flip container */}
+      {/* Flip container — only mount both faces during animation */}
       <View style={styles.flipContainer}>
-        <Animated.View style={[styles.face, isVoiceMode ? styles.hiddenFace : undefined, chatStyle]}>
-          <ChatMode />
-        </Animated.View>
-        <Animated.View style={[styles.face, !isVoiceMode ? styles.hiddenFace : undefined, voiceStyle]}>
-          <VoiceMode />
-        </Animated.View>
+        {showChat && (
+          <Animated.View style={[styles.face, isVoiceMode ? styles.overlayFace : undefined, chatStyle]}>
+            <ChatMode />
+          </Animated.View>
+        )}
+        {showVoice && (
+          <Animated.View style={[styles.face, !isVoiceMode ? styles.overlayFace : undefined, voiceStyle]}>
+            <VoiceMode />
+          </Animated.View>
+        )}
       </View>
     </View>
   );
@@ -124,7 +141,7 @@ const styles = StyleSheet.create({
   face: {
     flex: 1,
   },
-  hiddenFace: {
+  overlayFace: {
     position: "absolute",
     top: 0,
     left: 0,
