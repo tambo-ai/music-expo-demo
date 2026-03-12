@@ -126,8 +126,8 @@ export function VoiceMode() {
   }));
 
   return (
-    <NeumorphicView inset radius={22} distance={4} style={styles.card}>
-      <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <NeumorphicView inset radius={22} distance={4} style={[styles.card, { marginBottom: Math.max(insets.bottom, 16) }]}>
+      <View style={styles.container}>
         {/* User transcript - above mic */}
         <Animated.View style={[styles.textArea, styles.userArea, userAnimStyle]}>
           <Text style={styles.userText}>
