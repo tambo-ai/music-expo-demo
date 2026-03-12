@@ -4,7 +4,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  interpolate,
   Easing,
   runOnJS,
 } from "react-native-reanimated";
@@ -13,54 +12,40 @@ import { NeumorphicView } from "./neumorphic-view";
 import { ChatMode } from "./chat-mode";
 import { VoiceMode } from "./voice-mode";
 
-const FLIP_DURATION = 500;
+const TRANSITION_DURATION = 300;
 
 export function ChatSection() {
   const [isVoiceMode, setIsVoiceMode] = useState(true);
-  const [isFlipping, setIsFlipping] = useState(false);
-  const flipProgress = useSharedValue(1); // 0 = chat, 1 = voice
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const progress = useSharedValue(1); // 0 = chat, 1 = voice
 
-  const onFlipDone = useCallback(() => {
-    setIsFlipping(false);
+  const onTransitionDone = useCallback(() => {
+    setIsTransitioning(false);
   }, []);
 
   const toggleMode = useCallback(() => {
     const next = !isVoiceMode;
-    setIsFlipping(true);
+    setIsTransitioning(true);
     setIsVoiceMode(next);
-    flipProgress.value = withTiming(
+    progress.value = withTiming(
       next ? 1 : 0,
-      { duration: FLIP_DURATION, easing: Easing.inOut(Easing.cubic) },
+      { duration: TRANSITION_DURATION, easing: Easing.inOut(Easing.cubic) },
       (finished) => {
-        if (finished) runOnJS(onFlipDone)();
+        if (finished) runOnJS(onTransitionDone)();
       },
     );
-  }, [isVoiceMode, flipProgress, onFlipDone]);
+  }, [isVoiceMode, progress, onTransitionDone]);
 
-  // Chat side: visible when progress 0→0.5, hidden at 0.5→1
-  const chatStyle = useAnimatedStyle(() => {
-    const rotateY = interpolate(flipProgress.value, [0, 0.5, 1], [0, 90, 90]);
-    const opacity = flipProgress.value <= 0.5 ? 1 : 0;
-    return {
-      transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }],
-      opacity,
-      backfaceVisibility: "hidden" as const,
-    };
-  });
+  const chatStyle = useAnimatedStyle(() => ({
+    opacity: 1 - progress.value,
+  }));
 
-  // Voice side: hidden at 0→0.5, visible when progress 0.5→1
-  const voiceStyle = useAnimatedStyle(() => {
-    const rotateY = interpolate(flipProgress.value, [0, 0.5, 1], [-90, -90, 0]);
-    const opacity = flipProgress.value > 0.5 ? 1 : 0;
-    return {
-      transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }],
-      opacity,
-      backfaceVisibility: "hidden" as const,
-    };
-  });
+  const voiceStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+  }));
 
-  const showChat = !isVoiceMode || isFlipping;
-  const showVoice = isVoiceMode || isFlipping;
+  const showChat = !isVoiceMode || isTransitioning;
+  const showVoice = isVoiceMode || isTransitioning;
 
   return (
     <View style={styles.container}>
@@ -87,8 +72,8 @@ export function ChatSection() {
         </NeumorphicView>
       </View>
 
-      {/* Flip container — only mount both faces during animation */}
-      <View style={styles.flipContainer}>
+      {/* Crossfade container — only mount both during transition */}
+      <View style={styles.contentArea}>
         {showChat && (
           <Animated.View style={[styles.face, isVoiceMode ? styles.overlayFace : undefined, chatStyle]}>
             <ChatMode />
@@ -135,7 +120,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  flipContainer: {
+  contentArea: {
     flex: 1,
   },
   face: {
