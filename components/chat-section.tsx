@@ -1,234 +1,87 @@
-import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  ActivityIndicator,
-  Keyboard,
-  Platform,
-} from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolate,
+  Easing,
+} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
-import type { TamboThreadMessage } from "@tambo-ai/react";
 import { NeumorphicView } from "./neumorphic-view";
+import { ChatMode } from "./chat-mode";
+import { VoiceMode } from "./voice-mode";
 
-function getTextContent(message: TamboThreadMessage): string {
-  if (!Array.isArray(message.content)) return "";
-  return message.content
-    .filter((block): block is { type: "text"; text: string } => block.type === "text")
-    .map((block) => block.text)
-    .join("\n")
-    .trim();
-}
-
-function MessageItem({ role, content }: { role: "user" | "assistant"; content: string }) {
-  const isUser = role === "user";
-  return (
-    <View style={styles.messageRow}>
-      <View style={[styles.avatar, isUser ? styles.userAvatar : styles.aiAvatar]}>
-        <Ionicons name={isUser ? "headset" : "sparkles"} size={12} color="#FFFFFF" />
-      </View>
-      <View style={styles.messageContent}>
-        <Text style={[styles.messageLabel, isUser ? styles.userLabel : styles.aiLabel]}>
-          {isUser ? "You" : "Synthia"}
-        </Text>
-        <Text style={styles.messageText}>{content}</Text>
-      </View>
-    </View>
-  );
-}
-
-function GeneratingIndicator() {
-  return (
-    <View style={styles.messageRow}>
-      <View style={[styles.avatar, styles.aiAvatar]}>
-        <ActivityIndicator size="small" color="#fff" style={styles.loadingSpinner} />
-      </View>
-      <View style={styles.messageContent}>
-        <Text style={[styles.messageLabel, styles.aiLabel]}>Synthia</Text>
-        <Text style={[styles.messageText, styles.generatingText]}>generating...</Text>
-      </View>
-    </View>
-  );
-}
+const FLIP_DURATION = 500;
 
 export function ChatSection() {
-  const { messages } = useTambo();
-  const { value, setValue, submit, isPending } = useTamboThreadInput();
-  const insets = useSafeAreaInsets();
-  const inputRef = useRef<TextInput>(null);
-  const listRef = useRef<FlatList>(null);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [inputHeight, setInputHeight] = useState(36);
-  const [isListening, setIsListening] = useState(false);
-  const voiceSessionRef = useRef(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const flipProgress = useSharedValue(0); // 0 = chat, 1 = voice
 
-  useSpeechRecognitionEvent("result", (event) => {
-    const transcript = event.results[0]?.transcript ?? "";
-    setValue(transcript);
-    if (event.isFinal && transcript.trim() && voiceSessionRef.current) {
-      voiceSessionRef.current = false;
-      submit();
-    }
-  });
-
-  useSpeechRecognitionEvent("end", () => {
-    setIsListening(false);
-    voiceSessionRef.current = false;
-  });
-
-  useSpeechRecognitionEvent("error", () => {
-    setIsListening(false);
-  });
-
-  const handleMicPress = useCallback(async () => {
-    if (isListening) {
-      ExpoSpeechRecognitionModule.stop();
-      return;
-    }
-
-    const { granted } =
-      await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    if (!granted) return;
-
-    voiceSessionRef.current = true;
-    ExpoSpeechRecognitionModule.start({
-      lang: "en-US",
-      interimResults: true,
-      continuous: false,
+  const toggleMode = useCallback(() => {
+    const next = !isVoiceMode;
+    setIsVoiceMode(next);
+    flipProgress.value = withTiming(next ? 1 : 0, {
+      duration: FLIP_DURATION,
+      easing: Easing.inOut(Easing.cubic),
     });
-    setIsListening(true);
-  }, [isListening]);
+  }, [isVoiceMode, flipProgress]);
 
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
+  // Chat side: visible when progress 0→0.5, hidden at 0.5→1
+  const chatStyle = useAnimatedStyle(() => {
+    const rotateY = interpolate(flipProgress.value, [0, 0.5, 1], [0, 90, 90]);
+    const opacity = flipProgress.value <= 0.5 ? 1 : 0;
+    return {
+      transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }],
+      opacity,
+      backfaceVisibility: "hidden" as const,
     };
-  }, []);
+  });
 
-  const displayMessages = useMemo(() => {
-    const filtered = messages
-      .filter((m: TamboThreadMessage) => m.role === "user" || m.role === "assistant")
-      .filter((m: TamboThreadMessage) => getTextContent(m).length > 0);
-
-    // Tambo's client hook can insert assistant responses before the user message
-    // that triggered them. Re-sort by createdAt to match database order.
-    return [...filtered].sort((a, b) => {
-      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      if (timeA !== timeB) return timeA - timeB;
-      // Tie-breaker: user messages before assistant messages
-      if (a.role === "user" && b.role === "assistant") return -1;
-      if (a.role === "assistant" && b.role === "user") return 1;
-      return 0;
-    });
-  }, [messages]);
-
-  async function handleSend() {
-    if (!value.trim()) return;
-    await submit();
-  }
-
-  const isKeyboardVisible = keyboardHeight > 0;
+  // Voice side: hidden at 0→0.5, visible when progress 0.5→1
+  const voiceStyle = useAnimatedStyle(() => {
+    const rotateY = interpolate(flipProgress.value, [0, 0.5, 1], [-90, -90, 0]);
+    const opacity = flipProgress.value > 0.5 ? 1 : 0;
+    return {
+      transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }],
+      opacity,
+      backfaceVisibility: "hidden" as const,
+    };
+  });
 
   return (
     <View style={styles.container}>
-      <NeumorphicView inset radius={22} distance={4} style={styles.cardOuter}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.headerDot} />
-            <Text style={styles.headerTitle}>AI Assistant</Text>
-          </View>
+      {/* Header with toggle */}
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <View style={styles.headerDot} />
+          <Text style={styles.headerTitle}>
+            {isVoiceMode ? "Voice Mode" : "AI Assistant"}
+          </Text>
         </View>
-
-        {/* Messages */}
-        <FlatList
-          data={displayMessages}
-          keyExtractor={(item: TamboThreadMessage, index: number) => item.id ?? `msg-${index}`}
-          renderItem={({ item }: { item: TamboThreadMessage }) => (
-            <MessageItem
-              role={item.role as "user" | "assistant"}
-              content={getTextContent(item)}
+        <NeumorphicView
+          radius={10}
+          distance={3}
+          inset={isVoiceMode}
+        >
+          <Pressable onPress={toggleMode} style={styles.toggleButton}>
+            <Ionicons
+              name={isVoiceMode ? "chatbubbles" : "mic"}
+              size={14}
+              color={isVoiceMode ? "#6C63FF" : "#4A5568"}
             />
-          )}
-          ListFooterComponent={isPending ? <GeneratingIndicator /> : null}
-          ref={listRef}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          onLayout={() => listRef.current?.scrollToEnd({ animated: false })}
-          style={styles.messagesList}
-          contentContainerStyle={styles.messagesContent}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-        />
-      </NeumorphicView>
+          </Pressable>
+        </NeumorphicView>
+      </View>
 
-      {/* Input — repositions above keyboard when visible */}
-      <View
-        style={
-          isKeyboardVisible
-            ? [styles.floatingInput, { bottom: keyboardHeight }]
-            : [styles.inputRow, { paddingBottom: Math.max(insets.bottom, 10) }]
-        }
-      >
-        <View style={isKeyboardVisible ? styles.floatingInputInner : styles.inputRowInner}>
-          <NeumorphicView inset radius={18} distance={3} style={styles.inputWrapper}>
-            <TextInput
-              ref={inputRef}
-              style={[styles.input, { height: Math.min(inputHeight, 80) }]}
-              value={value}
-              onChangeText={setValue}
-              placeholder="Ask Synthia..."
-              placeholderTextColor="#8A95A5"
-              multiline
-              maxLength={2000}
-              editable={!isPending}
-              onContentSizeChange={(e) => {
-                setInputHeight(Math.max(36, e.nativeEvent.contentSize.height));
-              }}
-            />
-          </NeumorphicView>
-          <Pressable
-            style={[styles.voiceButton, isListening && styles.voiceButtonActive]}
-            onPress={handleMicPress}
-            disabled={isPending}
-          >
-            <Ionicons name={isListening ? "stop" : "mic"} size={18} color="#FFFFFF" />
-          </Pressable>
-          <Pressable
-            onPress={handleSend}
-            disabled={isPending || !value.trim()}
-            style={[
-              styles.sendButton,
-              (isPending || !value.trim()) && styles.sendButtonDisabled,
-            ]}
-          >
-            {isPending ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
-            )}
-          </Pressable>
-        </View>
+      {/* Flip container */}
+      <View style={styles.flipContainer}>
+        <Animated.View style={[styles.face, chatStyle]}>
+          <ChatMode />
+        </Animated.View>
+        <Animated.View style={[styles.face, styles.backFace, voiceStyle]}>
+          <VoiceMode />
+        </Animated.View>
       </View>
     </View>
   );
@@ -238,18 +91,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  cardOuter: {
-    flex: 1,
-    marginHorizontal: 20,
-  },
-  header: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#D0D5DC",
+    paddingHorizontal: 20,
+    marginBottom: 8,
   },
   headerLeft: {
     flexDirection: "row",
@@ -267,123 +114,21 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#3A4150",
   },
-  messagesList: {
+  toggleButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  flipContainer: {
     flex: 1,
   },
-  messagesContent: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  messageRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-  },
-  avatar: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  aiAvatar: {
-    backgroundColor: "#6C63FF",
-  },
-  userAvatar: {
-    backgroundColor: "#8A95A5",
-  },
-  avatarText: {
-    color: "#FFFFFF",
-    fontSize: 9,
-  },
-  messageContent: {
-    flex: 1,
-    gap: 2,
-  },
-  messageLabel: {
-    fontSize: 10,
-    fontWeight: "500",
-  },
-  aiLabel: {
-    color: "#6C63FF",
-  },
-  userLabel: {
-    color: "#8A95A5",
-  },
-  messageText: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: "#4A5568",
-  },
-  generatingText: {
-    color: "#8A95A5",
-    fontStyle: "italic",
-  },
-  loadingSpinner: {
-    transform: [{ scale: 0.6 }],
-  },
-  inputRow: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    minHeight: 60,
-  },
-  inputRowInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  inputWrapper: {
+  face: {
     flex: 1,
   },
-  input: {
-    paddingHorizontal: 14,
-    paddingTop: 8,
-    paddingBottom: 8,
-    fontSize: 13,
-    color: "#3A4150",
-  },
-  voiceButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#6C63FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  voiceButtonActive: {
-    backgroundColor: "#dc2626",
-  },
-  sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#6C63FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sendButtonDisabled: {
-    backgroundColor: "#B0B5C0",
-  },
-  sendIcon: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  floatingInput: {
+  backFace: {
     position: "absolute",
+    top: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#E0E5EC",
-    borderTopWidth: 1,
-    borderTopColor: "#D0D5DC",
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  floatingInputInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 20,
+    bottom: 0,
   },
 });
