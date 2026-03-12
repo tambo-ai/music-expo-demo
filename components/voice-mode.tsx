@@ -52,22 +52,26 @@ export function VoiceMode() {
   const aiOpacity = useSharedValue(0);
   const prevAiTextRef = useRef("");
 
-  // Watch for new AI responses
+  // Watch for new AI responses — show streaming text immediately
   const lastAiText = getLastAssistantText(messages);
 
   useEffect(() => {
-    if (lastAiText && lastAiText !== prevAiTextRef.current && !isPending) {
+    if (lastAiText && lastAiText !== prevAiTextRef.current) {
       prevAiTextRef.current = lastAiText;
       setAiText(lastAiText);
       aiOpacity.value = withTiming(1, { duration: FADE_DURATION });
+    }
+  }, [lastAiText, aiOpacity]);
 
-      // Fade out user text 3s after AI finishes
+  // Fade out user text 3s after AI finishes responding
+  useEffect(() => {
+    if (!isPending && aiText) {
       userOpacity.value = withDelay(
         USER_FADE_DELAY,
         withTiming(0, { duration: FADE_DURATION }),
       );
     }
-  }, [lastAiText, isPending, aiOpacity, userOpacity]);
+  }, [isPending, aiText, userOpacity]);
 
   useSpeechRecognitionEvent("result", (event) => {
     const transcript = event.results[0]?.transcript ?? "";
