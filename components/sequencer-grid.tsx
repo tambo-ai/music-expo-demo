@@ -28,8 +28,9 @@ export function SequencerGrid() {
 
   // Cursor should land at the center of each cell
   const cursorOffset = GRID_PADDING + LABEL_WIDTH + LABEL_GAP;
+  const CURSOR_WIDTH = 2;
   const cursorX = useDerivedValue(() => {
-    return cursorOffset + playbackStep.value * cellStride + cellWidth / 2;
+    return cursorOffset + playbackStep.value * cellStride + cellWidth / 2 - CURSOR_WIDTH / 2;
   });
 
   const rowHeight = 21 + 6; // cell height + gap
