@@ -17,18 +17,21 @@ A mobile "metronome on steroids" — type natural language like "Give me a rock 
 
 ## Prerequisites
 
-- Node.js 18+
+- [Bun](https://bun.sh/) 1.0+
 - Xcode 26+ (for iOS simulator)
 - CocoaPods (`brew install cocoapods` if needed)
 
 ## Setup
 
 ```bash
-# Install dependencies
-npm install --legacy-peer-deps
+# Install dependencies (also downloads prebuilt native audio libraries)
+bun install
 
-# Download prebuilt native audio libraries
-cd node_modules/react-native-audio-api && bash scripts/download-prebuilt-binaries.sh && cd ../..
+# Create a Tambo app and get your API key:
+# 1. Go to https://console.tambo.co/
+# 2. Create an app called "Music Expo Demo"
+# 3. Press "Create API Key" and copy the key
+# 4. In project settings under "Custom Instructions", enable "Allow system prompt override"
 
 # Add your Tambo API key
 cp .env.example .env
@@ -83,5 +86,5 @@ plugins/
 ## Notes
 
 - Audio is synthesized on-device (no sample loading). Kick, snare, hihat, clap, rimshot, and tom each have distinct synthesis.
-- The `--legacy-peer-deps` flag is needed due to peer dependency conflicts between some packages.
+- Bun is used as the package manager.
 - The Xcode 26 workaround plugin automatically disables Swift explicit modules during `expo prebuild`.
