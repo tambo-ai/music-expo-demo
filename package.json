@@ -6,7 +6,8 @@
     "start": "expo start",
     "ios": "expo run:ios",
     "android": "expo run:android",
-    "prebuild": "expo prebuild"
+    "prebuild": "expo prebuild",
+    "postinstall": "[ -d node_modules/react-native-audio-api/common/cpp/audioapi/external/iphoneos ] || (cd node_modules/react-native-audio-api && bash scripts/download-prebuilt-binaries.sh && cd ../..)"
   },
   "dependencies": {
     "@expo-google-fonts/geist-mono": "^0.4.1",

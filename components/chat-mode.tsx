@@ -142,7 +142,9 @@ export function ChatMode() {
 
   async function handleSend() {
     if (!value.trim()) return;
-    await submit();
+    const result = submit();
+    setValue("");
+    await result;
   }
 
   const isKeyboardVisible = keyboardHeight > 0;
