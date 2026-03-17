@@ -35,6 +35,11 @@ export class Scheduler {
 
   setPattern(pattern: StrudelPattern | null) {
     this.pattern = pattern;
+    // Reset scheduling window so the new pattern is picked up immediately
+    // instead of waiting for the old lookahead window to expire.
+    const now = this.ctx.currentTime;
+    const cycleDuration = (60 / this.bpm) * 4;
+    this.lastScheduledCycle = (now - this.startTime) / cycleDuration;
   }
 
   setBpm(bpm: number) {
