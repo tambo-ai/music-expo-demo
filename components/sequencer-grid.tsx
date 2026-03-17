@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, StyleSheet, useWindowDimensions } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useDerivedValue,
@@ -34,7 +34,10 @@ export function SequencerGrid() {
   });
 
   const rowHeight = 21 + 6; // cell height + gap
+  const MAX_VISIBLE_ROWS = 6;
   const gridHeight = gridData ? gridData.rows.length * rowHeight : 0;
+  const needsScroll = gridData ? gridData.rows.length > MAX_VISIBLE_ROWS : false;
+  const clampedHeight = needsScroll ? MAX_VISIBLE_ROWS * rowHeight + GRID_PADDING * 2 : undefined;
 
   const cursorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: cursorX.value }],
@@ -58,15 +61,20 @@ export function SequencerGrid() {
           {steps} STEPS · 4/4
         </Text>
       </View>
-      <NeumorphicView inset radius={18} distance={4}>
-        <View style={styles.gridInner}>
+      <NeumorphicView inset radius={18} distance={4} style={clampedHeight ? { maxHeight: clampedHeight } : undefined}>
+        <ScrollView
+          scrollEnabled={needsScroll}
+          showsVerticalScrollIndicator={needsScroll}
+          nestedScrollEnabled
+          contentContainerStyle={styles.gridInner}
+        >
           {gridData.rows.map((row) => (
             <GridRow key={row.instrument} row={row} cellSize={cellWidth} onToggleCell={actions.toggleCell} />
           ))}
           <Animated.View
             style={[styles.cursor, { height: gridHeight }, cursorStyle]}
           />
-        </View>
+        </ScrollView>
       </NeumorphicView>
     </View>
   );
